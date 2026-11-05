@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Copy Files to DEV Server
         uses: appleboy/scp-action@v0.1.7
@@ -26,7 +26,6 @@ jobs:
           target: "/home/ubuntu/Employee_Details_App"
           rm: false
           strip_components: 0
-          exclude: ".git,node_modules,**/node_modules"
 
       - name: Deploy Using Docker Compose
         uses: appleboy/ssh-action@v1.2.0
