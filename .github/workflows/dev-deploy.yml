@@ -1,70 +1,52 @@
-name: Employee Details App CI/CD
+
+name: DEV Docker Deployment
 
 on:
   push:
-    
+    branches:
+      - dev
 
   workflow_dispatch:
 
 jobs:
-  ci:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Latest Code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Copy Files to DEV Server
+        uses: appleboy/scp-action@v0.1.7
         with:
-          node-version: '24'
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USERNAME }}
+          key: ${{ secrets.DEV_SSH_KEY }}
+          source: "."
+          target: "/home/ubuntu/Employee_Details_App"
+          rm: false
+          strip_components: 0
+          exclude: ".git,node_modules,**/node_modules"
 
-      # Backend CI
-      - name: Install Backend Dependencies
-        working-directory: ./server
-        run: npm install
-
-      # Frontend CI
-      - name: Install Frontend Dependencies
-        working-directory: ./client
-        run: npm install
-
-      - name: Build Frontend
-        working-directory: ./client
-        run: npm run build
-
-  cd:
-    needs: ci
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Deploy Application to EC2
+      - name: Deploy Using Docker Compose
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USERNAME }}
+          key: ${{ secrets.DEV_SSH_KEY }}
           script: |
-            echo "Starting deployment..."
-
             cd /home/ubuntu/Employee_Details_App
-            git pull origin main
 
-            # Backend
-            echo "Deploying backend..."
-            cd server
-            npm install
-            pm2 restart employee-backend --update-env
-            # Frontend
-            echo "Deploying frontend..."
-            cd ../client
-            npm install
-            npm run build
+            echo "Building and deploying Docker containers..."
 
-            # For Vite frontend
-            pm2 delete employee-frontend || true
-            pm2 restart employee-frontend 
+            docker compose up -d --build
 
-            pm2 save
+            echo "Removing unused Docker images..."
 
-            echo "Deployment completed successfully!"
+            docker image prune -f
+
+            echo "Checking container status..."
+
+            docker compose ps
+
+            echo "DEV deployment completed successfully!"
