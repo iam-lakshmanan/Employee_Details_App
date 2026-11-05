@@ -13,9 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout source code
       - name: Checkout Code
         uses: actions/checkout@v5
 
+      # Step 2: Copy source code to DEV Server
       - name: Copy Files to DEV Server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -27,7 +29,8 @@ jobs:
           rm: false
           strip_components: 0
 
-      - name: Deploy Using Docker Compose
+      # Step 3: Build and Deploy Docker Containers
+      - name: Build and Deploy Using Docker Compose
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEV_HOST }}
@@ -36,9 +39,13 @@ jobs:
           script: |
             cd /home/ubuntu/Employee_Details_App
 
-            echo "Building and deploying Docker containers..."
+            echo "Building Docker images..."
 
-            docker compose up -d --build
+            docker compose build
+
+            echo "Starting Docker containers..."
+
+            docker compose up -d --remove-orphans
 
             echo "Removing unused Docker images..."
 
