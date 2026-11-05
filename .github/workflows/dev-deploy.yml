@@ -2,7 +2,7 @@ name: Employee Details App CI/CD
 
 on:
   push:
-    branches: [main]
+    
 
   workflow_dispatch:
 
