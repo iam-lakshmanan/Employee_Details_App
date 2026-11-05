@@ -13,11 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout source code
+      # Step 1: Checkout Code
       - name: Checkout Code
         uses: actions/checkout@v5
 
-      # Step 2: Copy source code to DEV Server
+      # Step 2: Copy Files to DEV Server
       - name: Copy Files to DEV Server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -29,7 +29,38 @@ jobs:
           rm: false
           strip_components: 0
 
-      # Step 3: Build and Deploy Docker Containers
+      # Step 3: Clean DEV Server
+      - name: Clean DEV Server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USERNAME }}
+          key: ${{ secrets.DEV_SSH_KEY }}
+          script: |
+            set -e
+
+            echo "Checking disk space before cleanup..."
+            df -h
+
+            echo "Removing stopped containers..."
+            sudo docker container prune -f
+
+            echo "Removing unused Docker images..."
+            sudo docker image prune -a -f
+
+            echo "Removing unused Docker build cache..."
+            sudo docker builder prune -a -f
+
+            echo "Removing unused Docker networks..."
+            sudo docker network prune -f
+
+            echo "Cleaning Ubuntu package cache..."
+            sudo apt clean
+
+            echo "Checking disk space after cleanup..."
+            df -h
+
+      # Step 4: Build and Deploy Docker Containers
       - name: Build and Deploy Using Docker Compose
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -37,6 +68,8 @@ jobs:
           username: ${{ secrets.DEV_USERNAME }}
           key: ${{ secrets.DEV_SSH_KEY }}
           script: |
+            set -e
+
             cd /home/ubuntu/Employee_Details_App
 
             echo "Building Docker images..."
@@ -47,12 +80,12 @@ jobs:
 
             docker compose up -d --remove-orphans
 
-            echo "Removing unused Docker images..."
-
-            docker image prune -f
-
             echo "Checking container status..."
 
             docker compose ps
+
+            echo "Checking Docker images..."
+
+            docker images
 
             echo "DEV deployment completed successfully!"
