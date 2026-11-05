@@ -20,7 +20,7 @@ services:
       - "5050:5050"
     environment:
       PORT: 5050
-      MONGO_URI: mongodb://mongodb:27017/employee_db
+      ATLAS_URI: mongodb://mongodb:27017/employee_db
     depends_on:
       - mongodb
     networks:
