@@ -1,0 +1,45 @@
+services:
+
+  # React Frontend
+  client:
+    build: ./client
+    container_name: employee-frontend
+    ports:
+      - "80:5173"
+    depends_on:
+      - server
+    networks:
+      - employee-network
+    restart: always
+
+  # Node.js Backend
+  server:
+    build: ./server
+    container_name: employee-backend
+    ports:
+      - "5050:5050"
+    environment:
+      PORT: 5050
+      ATLAS_URI: mongodb://mongodb:27017/employee_db
+    depends_on:
+      - mongodb
+    networks:
+      - employee-network
+    restart: always
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: employee-mongodb
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - employee-network
+    restart: always
+
+volumes:
+  mongodb_data:
+
+networks:
+  employee-network:
+    driver: bridge
